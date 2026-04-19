@@ -63,6 +63,7 @@ output application/java
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="0a49121c-9563-42d2-85ca-64d8728642d0" message="#[payload]"/>
 	</flow>
 	<flow name="get:\health:emp-process-api-hah-config">
 		<ee:transform>
@@ -77,7 +78,8 @@ output application/json
         </ee:transform>
     </flow>
     <flow name="post:\emp:application\json:emp-process-api-hah-config">
-        <set-variable value="#[payload.id]" doc:name="Set Variable" doc:id="18a5f1ad-d87c-49c7-b2c3-36a49a5f55dc" variableName="pid"/>
+        <logger level="INFO" doc:name="Logger" doc:id="f4284cb1-ee39-46bb-8d99-f72d5b96fdd9" message="#[payload]"/>
+		<set-variable value="#[payload.id]" doc:name="Set Variable" doc:id="18a5f1ad-d87c-49c7-b2c3-36a49a5f55dc" variableName="pid"/>
 		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="f0321f4b-47b7-47a9-9cd9-339003c06f51" variableName="actual_payload"/>
 		<ee:transform doc:name="Transform Message" doc:id="93c94526-b6d8-494e-8a53-514cdaa579e1" >
 			<ee:message >
@@ -133,5 +135,6 @@ output application/json
 }]]></ee:set-payload>
             </ee:message>
         </ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="64124357-3ba3-4c75-bccb-de23801ded4a" message="#[payload]"/>
     </flow>
 </mule>
