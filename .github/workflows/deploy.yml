@@ -27,5 +27,5 @@ jobs:
       - name: Build and Deploy
         run: mvn clean deploy -DmuleDeploy
         env:
-          anypoint.username: ${{ secrets.ANYPOINT_CLIENT_ID}}
-          anypoint.password: ${{ secrets.ANYPOINT_CLIENT_SECRET}}
+          anypoint.clientId: ${{ secrets.ANYPOINT_CLIENT_ID}}
+          anypoint.clientSecret: ${{ secrets.ANYPOINT_CLIENT_SECRET}}
