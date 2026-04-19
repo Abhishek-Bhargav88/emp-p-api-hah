@@ -12,7 +12,7 @@ http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/sc
 		<s3:connection accessKey="${aws.accessKey}" secretKey="${secure::aws.accessSecret}" region="ap-south-1" />
 	</s3:config>
 	<db:config name="Database_Config" doc:name="Database Config" doc:id="5a4b44b3-e64f-4603-912b-e74ac94387b5" >
-		<db:my-sql-connection host="localhost" port="3306" user="${database.username}" password="${secure::database.password}" database="emp" />
+		<db:my-sql-connection host="emp.c74ymqywouh3.ap-south-1.rds.amazonaws.com" port="3306" user="${database.username}" password="${secure::database.password}" database="emp" />
 	</db:config>
 	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="8e750f93-5d30-4039-bc70-1c4ee3a39f2e" >
 		<email:smtp-connection host="smtp.gmail.com" port="587" user="${secure::email}" password="biwl iytl utmr isxg">
