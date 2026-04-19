@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:s3="http://www.mulesoft.org/schema/mule/s3" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/s3 http://www.mulesoft.org/schema/mule/s3/current/mule-s3.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+    <http:listener-config name="emp-process-api-hah-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="emp-process-api-hah-config" api="emp-process-api-hah.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <s3:config name="Amazon_S3_Configuration" doc:name="Amazon S3 Configuration" doc:id="1c43a707-e7bc-4031-8c4d-a027f5dcbbd9" >
+		<s3:connection accessKey="${aws.accessKey}" secretKey="${secure::aws.accessSecret}" region="ap-south-1" />
+	</s3:config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="5a4b44b3-e64f-4603-912b-e74ac94387b5" >
+		<db:my-sql-connection host="localhost" port="3306" user="${database.username}" password="${secure::database.password}" database="emp" />
+	</db:config>
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="8e750f93-5d30-4039-bc70-1c4ee3a39f2e" >
+		<email:smtp-connection host="smtp.gmail.com" port="587" user="${secure::email}" password="biwl iytl utmr isxg">
+			<email:properties >
+				<email:property key="mail.smtp.starttls.enable" value="true" />
+			</email:properties>
+		</email:smtp-connection>
+	</email:smtp-config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="a47d4ab4-771b-4bc5-99db-3b21445a2bdd" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="fc739807-93bd-43de-bce5-fb6c3e26bc2d" file="secure-dev.properties" key="Muletesthelphome" />
+	<configuration-properties doc:name="Configuration properties" doc:id="691635e2-968a-4fa9-9759-90c3dd3f9291" file="dev.properties" />
+	<flow name="emp-process-api-hah-main">
+        <http:listener config-ref="emp-process-api-hah-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="emp-process-api-hah-config" />
+    </flow>
+	<flow name="emp-process-api-hahFlow" doc:id="7548577b-f917-4565-8d71-598d99d71520" >
+		<http:listener doc:name="Listener" doc:id="a7d566c4-6629-46a4-a847-4f72d768ac05" config-ref="HTTP_Listener_config" path="/api/{id}/{action}"/>
+		<set-variable value="#[attributes.uriParams.action]" doc:name="Set Variable" doc:id="39204d16-06f4-4e39-961b-8da3a8538ef9" variableName="anc"/>
+		<db:update doc:name="Update" doc:id="329d101c-be95-4d3c-9b0f-8af72d654977" config-ref="Database_Config">
+			<db:sql ><![CDATA[UPDATE employee
+SET 
+  accept_date = :accept,
+  result = :result
+WHERE id = :id;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	accept: now() as Date,
+	result: attributes.uriParams.action,
+	id: attributes.uriParams.id
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Transform Message" doc:id="8fb8c42f-94b7-4859-ae27-f8fc3f5933be">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"message": "offer " ++ vars.anc
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get:\health:emp-process-api-hah-config">
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "Api is up and running"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\emp:application\json:emp-process-api-hah-config">
+        <set-variable value="#[payload.id]" doc:name="Set Variable" doc:id="18a5f1ad-d87c-49c7-b2c3-36a49a5f55dc" variableName="pid"/>
+		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="f0321f4b-47b7-47a9-9cd9-339003c06f51" variableName="actual_payload"/>
+		<ee:transform doc:name="Transform Message" doc:id="93c94526-b6d8-494e-8a53-514cdaa579e1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv
+---
+[
+  {
+    id: payload.id,
+    name: payload.name,
+    age: payload.age,
+    salary: payload.salary,
+    flatNumber: payload.address.flatNumber,
+    city: payload.address.city
+  }
+]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<s3:put-object doc:name="Put Object" doc:id="5a2cf219-1083-4442-843b-a60ee990b2ec" config-ref="Amazon_S3_Configuration" bucketName="mule-aws-bucket-test" key="#['New/' ++ vars.pid ++ &quot;.csv&quot;]" objectACL="AUTHENTICATED_READ" storageClass="STANDARD"/>
+		<db:insert doc:name="Insert" doc:id="06eb0e87-a69a-4297-a845-6039f6b5b0ea" config-ref="Database_Config">
+			<db:sql ><![CDATA[insert into employee(id, name, created_date, file) values( :empID, :empName, :date, :file)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	empID: vars.actual_payload.id,
+	empName: vars.actual_payload.name,
+	date: now() as Date,
+	file: vars.pid ++ ".csv"
+}]]]></db:input-parameters>
+		</db:insert>
+		<email:send doc:name="Send" doc:id="ca0c9d31-cef2-43f3-96b6-3d2272b95999" config-ref="Email_SMTP" fromAddress="anujbhargav3@gmail.com" subject="offer">
+			<email:to-addresses >
+				<email:to-address value="abhishekbhargav156@gmail.com" />
+			</email:to-addresses>
+			<email:body >
+				<email:content ><![CDATA[#[%dw 2.0
+output text/plain
+---
+"Click on This to accept ------> http://localhost:8082/api/" 
+++ vars.pid 
+++ "/accepted\n" 
+++ "Click on This to reject ------> http://localhost:8082/api/" 
+++ vars.pid 
+++ "/reject"]]]></email:content>
+			</email:body>
+		</email:send>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+   
+  "message": "user with id :" ++ vars.pid ++ " added successfully"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>

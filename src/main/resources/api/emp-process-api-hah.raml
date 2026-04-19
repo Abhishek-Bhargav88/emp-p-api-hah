@@ -1,0 +1,85 @@
+#%RAML 1.0
+title: emp-process-api-hah
+/emp:
+  post:
+    body:
+      application/json:
+        type: object
+        properties:
+          id:
+            type: integer
+            required: true
+            example: 1
+          name:
+            type: string
+            required: true
+            example: "Abhishek Bhargav"
+          age:
+            type : integer
+            required: true
+            example: 23
+          salary:
+            type: integer
+            required: true
+            example: 2400000
+          address:
+            type: object
+            properties:
+              flatNumber: 
+                type: number
+                required: true
+                example: 1234
+              city:
+                type: string
+                required: true
+                example: "ropar"
+        example:
+          {
+            id: 1,
+            name : "Abhishek Bhargav",
+            age: 24,
+            salary: 2400000,
+            address:
+              {
+                  flatNumber: 123,
+                  city: "ropar"
+              }
+          }
+    responses:
+      200:
+        body:
+          application/json:
+            type: object
+            example:
+              {
+                "message" : "user is added"
+              }
+      400:
+        body:
+          application/json:
+            type: object
+            example:
+              {
+                "message" : "details are missing"
+              }
+      500:
+        body:
+          application/json:
+             type: object
+             example:
+               {
+                 "message" : "internal server error"
+               }
+            
+                            
+/health:
+  get:
+    responses:
+      200:
+        body:
+          application/json:
+            type: object
+            example:
+              {
+                "message": "Api is up and running"
+              }
